@@ -6,6 +6,8 @@ struct HUDView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject private var updater = AppUpdate.shared
 
+    private var theme: YuhePalette { settings.palette }
+
     var body: some View {
         Group {
             if store.showSettings {
@@ -14,14 +16,14 @@ struct HUDView: View {
                 mainPanel
             }
         }
+        .padding(14)
         .background(panelBackground)
-        .frame(width: 368)
-        .fixedSize(horizontal: true, vertical: true)
-        .clipShape(HUDShape())
-        .overlay(HUDShape().stroke(YuheTheme.line, lineWidth: 1))
-        .shadow(color: YuheTheme.cyan.opacity(0.12), radius: 24)
-        .preferredColorScheme(.dark)
-        .onChange(of: store.showSettings) { _, _ in }
+        .frame(width: YuhePalette.panelWidth, height: YuhePalette.panelHeight)
+        .clipShape(theme.shape(.panel))
+        .overlay(theme.shape(.panel).stroke(theme.line, lineWidth: theme.skin == .apple ? 1.2 : theme.strokeWidth))
+        .shadow(color: theme.glow ? theme.accent.opacity(0.12) : Color.black.opacity(theme.skin == .blush ? 0.08 : 0.22), radius: theme.skin == .apple ? 12 : 24)
+        .environment(\.yuhe, theme)
+        .preferredColorScheme(theme.preferredScheme)
         .task {
             await updater.check(quiet: true)
         }
@@ -30,53 +32,68 @@ struct HUDView: View {
     private var mainPanel: some View {
         VStack(spacing: 0) {
             header
-            Divider().overlay(YuheTheme.line)
-            VStack(spacing: 8) {
-                if visibleSnapshots.isEmpty {
-                    Text("设置里至少打开一家")
-                        .font(.custom("Share Tech Mono", size: 11))
-                        .foregroundStyle(YuheTheme.mute)
-                        .frame(maxWidth: .infinity, minHeight: 80)
-                } else {
-                    ForEach(visibleSnapshots) { snap in
-                        ProviderCard(snapshot: snap, now: store.now)
+            Divider().overlay(theme.line)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: theme.skin == .apple ? 10 : 8) {
+                    if visibleSnapshots.isEmpty {
+                        Text("设置里至少打开一家")
+                            .font(theme.mono(11))
+                            .foregroundStyle(theme.mute)
+                            .frame(maxWidth: .infinity, minHeight: 80)
+                    } else {
+                        ForEach(visibleSnapshots) { snap in
+                            ProviderCard(snapshot: snap, now: store.now)
+                        }
                     }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .frame(minHeight: 120, alignment: .top)
-            Divider().overlay(YuheTheme.line)
+            .frame(maxHeight: .infinity, alignment: .top)
+            Divider().overlay(theme.line)
             footer
         }
     }
 
+    @ViewBuilder
     private var panelBackground: some View {
-        LinearGradient(colors: [YuheTheme.panelTop, YuheTheme.panelBottom], startPoint: .top, endPoint: .bottom)
-            .overlay(
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [YuheTheme.cyan.opacity(0.05), .clear, YuheTheme.cyan.opacity(0.03)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+        switch theme.skin {
+        case .mech:
+            LinearGradient(colors: [theme.panelTop, theme.panelBottom], startPoint: .top, endPoint: .bottom)
+                .overlay(
+                    LinearGradient(
+                        colors: [theme.accent.opacity(0.05), .clear, theme.accent.opacity(0.03)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-            )
+                )
+        case .blush:
+            LinearGradient(colors: [theme.panelTop, theme.panelBottom], startPoint: .top, endPoint: .bottom)
+                .overlay(
+                    RadialGradient(
+                        colors: [theme.accent.opacity(0.14), .clear],
+                        center: .topTrailing,
+                        startRadius: 8,
+                        endRadius: 220
+                    )
+                )
+        case .apple:
+            Rectangle().fill(theme.panelTop)
+        }
     }
 
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("YUHE")
-                    .font(.custom("Tektur", size: 15).weight(.semibold))
-                    .foregroundStyle(YuheTheme.cyan)
-                    .shadow(color: YuheTheme.cyan.opacity(0.45), radius: 8)
-                    .kerning(4)
-                Text("额度 HUD  //  NODE-07")
-                    .font(.custom("Share Tech Mono", size: 10))
-                    .foregroundStyle(YuheTheme.mute)
-                    .kerning(1.6)
+                Text(theme.skin == .blush ? "Yuhe" : "YUHE")
+                    .font(theme.display(theme.skin == .apple ? 17 : 15))
+                    .foregroundStyle(theme.accent)
+                    .shadow(color: theme.glow ? theme.accent.opacity(0.45) : .clear, radius: 8)
+                    .kerning(theme.skin == .mech ? 4 : theme.titleKerning)
+                Text(headerSubtitle)
+                    .font(theme.mono(10))
+                    .foregroundStyle(theme.mute)
+                    .kerning(theme.skin == .mech ? 1.6 : 0)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 3) {
@@ -84,46 +101,58 @@ struct HUDView: View {
                     Circle()
                         .fill(dotColor)
                         .frame(width: 6, height: 6)
-                        .shadow(color: dotColor, radius: 6)
-                    Text(store.liveLabel.uppercased())
-                        .font(.custom("Share Tech Mono", size: 9))
-                        .foregroundStyle(YuheTheme.amber)
-                        .kerning(1.8)
+                        .shadow(color: theme.glow ? dotColor : .clear, radius: 6)
+                    Text(statusLabel)
+                        .font(theme.mono(9))
+                        .foregroundStyle(theme.amber)
+                        .kerning(theme.skin == .mech ? 1.8 : 0)
                 }
                 Text(YuheFormat.clock(store.now))
-                    .font(.custom("Share Tech Mono", size: 11))
-                    .foregroundStyle(YuheTheme.cyan)
+                    .font(theme.mono(11))
+                    .foregroundStyle(theme.accent)
                     .monospacedDigit()
                 if updater.available, let latest = updater.latestVersion {
                     Text("可更新 \(latest)")
-                        .font(.custom("Share Tech Mono", size: 9))
-                        .foregroundStyle(YuheTheme.amber)
+                        .font(theme.mono(9))
+                        .foregroundStyle(theme.amber)
                 } else {
                     Text(YuheFormat.syncAgo(store.lastSync))
-                        .font(.custom("Share Tech Mono", size: 9))
-                        .foregroundStyle(YuheTheme.mute)
+                        .font(theme.mono(9))
+                        .foregroundStyle(theme.mute)
                 }
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 14)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
+    }
+
+    private var headerSubtitle: String {
+        switch theme.skin {
+        case .mech: "额度 HUD  //  NODE-07"
+        case .blush: "额度小窗"
+        case .apple: "用量"
+        }
+    }
+
+    private var statusLabel: String {
+        theme.skin == .mech ? store.liveLabel.uppercased() : store.liveLabel
     }
 
     private var dotColor: Color {
         switch store.worstLevel {
-        case .ok: YuheTheme.cyan
-        case .warn, .stale: YuheTheme.amber
-        case .hot, .offline: YuheTheme.rose
+        case .ok: theme.accent
+        case .warn, .stale: theme.amber
+        case .hot, .offline: theme.rose
         }
     }
 
     private var footer: some View {
         HStack {
             Text(footerStatus)
-                .font(.custom("Share Tech Mono", size: 10))
-                .foregroundStyle(YuheTheme.mute)
-                .kerning(1.4)
+                .font(theme.mono(10))
+                .foregroundStyle(theme.mute)
+                .kerning(theme.skin == .mech ? 1.4 : 0)
             Spacer()
             HStack(spacing: 14) {
                 footerButton(store.isRefreshing ? "同步中" : "同步") {
@@ -153,89 +182,75 @@ struct HUDView: View {
     private func footerButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.custom("Share Tech Mono", size: 10))
-                .foregroundStyle(YuheTheme.cyan)
-                .kerning(2)
-                .shadow(color: YuheTheme.cyan.opacity(0.4), radius: 6)
+                .font(theme.mono(10, weight: theme.skin == .apple ? .medium : .regular))
+                .foregroundStyle(theme.accent)
+                .kerning(theme.skin == .mech ? 2 : 0)
+                .shadow(color: theme.glow ? theme.accent.opacity(0.4) : .clear, radius: 6)
         }
         .buttonStyle(.plain)
     }
 }
 
 struct ProviderCard: View {
+    @Environment(\.yuhe) private var theme
     let snapshot: QuotaSnapshot
     let now: Date
-    private var accent: Color { YuheTheme.accent(for: snapshot.provider) }
+    private var brand: Color { theme.accent(for: snapshot.provider) }
 
     var body: some View {
         HStack(spacing: 0) {
             Rectangle()
-                .fill(accent)
-                .frame(width: 2)
-                .shadow(color: accent, radius: 6)
+                .fill(brand)
+                .frame(width: theme.skin == .apple ? 3 : 2)
+                .shadow(color: theme.glow ? brand : .clear, radius: 6)
                 .padding(.vertical, 8)
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(snapshot.provider.displayName)
-                        .font(.custom("Tektur", size: 12))
-                        .foregroundStyle(Color(red: 0.84, green: 1, blue: 0.96))
-                        .kerning(2.2)
+                        .font(theme.display(12, weight: theme.skin == .apple ? .semibold : .semibold))
+                        .foregroundStyle(titleColor)
+                        .kerning(theme.skin == .mech ? 2.2 : 0)
                     if let plan = snapshot.plan {
-                        Text(plan)
-                            .font(.custom("Share Tech Mono", size: 9))
-                            .foregroundStyle(YuheTheme.mute)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .overlay(Rectangle().stroke(YuheTheme.mute.opacity(0.45), lineWidth: 1))
+                        tag(plan, color: theme.mute)
                     }
                     if snapshot.error != nil {
-                        Text("失效")
-                            .font(.custom("Share Tech Mono", size: 9))
-                            .foregroundStyle(YuheTheme.rose)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .overlay(Rectangle().stroke(YuheTheme.rose.opacity(0.7), lineWidth: 1))
+                        tag("失效", color: theme.rose)
                     } else if snapshot.warning != nil {
-                        Text("超额")
-                            .font(.custom("Share Tech Mono", size: 9))
-                            .foregroundStyle(YuheTheme.amber)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .overlay(Rectangle().stroke(YuheTheme.amber.opacity(0.7), lineWidth: 1))
+                        tag("超额", color: theme.amber)
                     }
                     Spacer()
                     Text(rightMeta)
-                        .font(.custom("Share Tech Mono", size: 10))
-                        .foregroundStyle(YuheTheme.mute)
+                        .font(theme.mono(10))
+                        .foregroundStyle(theme.mute)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
 
                 if let error = snapshot.error {
                     Text(error)
-                        .font(.custom("Share Tech Mono", size: 11))
-                        .foregroundStyle(YuheTheme.rose)
+                        .font(theme.mono(11))
+                        .foregroundStyle(theme.rose)
                 } else if snapshot.windows.isEmpty, snapshot.headline == nil, snapshot.totals.isEmpty {
                     Text(snapshot.headlineSecondary ?? "等待同步")
-                        .font(.custom("Share Tech Mono", size: 11))
-                        .foregroundStyle(YuheTheme.mute)
+                        .font(theme.mono(11))
+                        .foregroundStyle(theme.mute)
                 }
                 if let warning = snapshot.warning {
                     Text(warning)
-                        .font(.custom("Share Tech Mono", size: 10))
-                        .foregroundStyle(YuheTheme.amber)
+                        .font(theme.mono(10))
+                        .foregroundStyle(theme.amber)
                 }
 
                 if let headline = snapshot.headline {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(headline)
-                            .font(.custom("Share Tech Mono", size: 22))
-                            .foregroundStyle(accent)
-                            .shadow(color: accent.opacity(0.45), radius: 10)
+                            .font(theme.mono(22, weight: theme.skin == .apple ? .semibold : .regular))
+                            .foregroundStyle(brand)
+                            .shadow(color: theme.glow ? brand.opacity(0.45) : .clear, radius: 10)
                         if let secondary = snapshot.headlineSecondary {
                             Text(secondary)
-                                .font(.custom("Share Tech Mono", size: 10))
-                                .foregroundStyle(YuheTheme.mute)
+                                .font(theme.mono(10))
+                                .foregroundStyle(theme.mute)
                         }
                     }
                 }
@@ -245,7 +260,7 @@ struct ProviderCard: View {
                         title: window.title,
                         percent: window.displayPercent,
                         trailing: uniqueWindowTrailing(window),
-                        brand: accent,
+                        brand: brand,
                         level: window.level
                     )
                 }
@@ -254,7 +269,7 @@ struct ProviderCard: View {
                         title: product.name,
                         percent: product.displayPercent,
                         trailing: nil,
-                        brand: accent,
+                        brand: brand,
                         level: product.level
                     )
                 }
@@ -264,12 +279,12 @@ struct ProviderCard: View {
                         ForEach(snapshot.totals) { total in
                             HStack {
                                 Text(total.label)
-                                    .font(.custom("Share Tech Mono", size: 9))
-                                    .foregroundStyle(YuheTheme.mute)
+                                    .font(theme.mono(9))
+                                    .foregroundStyle(theme.mute)
                                 Spacer()
                                 Text(total.value)
-                                    .font(.custom("Share Tech Mono", size: 10))
-                                    .foregroundStyle(YuheTheme.ink)
+                                    .font(theme.mono(10))
+                                    .foregroundStyle(theme.ink)
                                     .lineLimit(1)
                             }
                         }
@@ -279,14 +294,54 @@ struct ProviderCard: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
         }
-        .background(
+        .background(cardBackground)
+        .clipShape(theme.shape(.card))
+        .overlay(theme.shape(.card).stroke(cardStroke, lineWidth: theme.strokeWidth))
+        .shadow(color: theme.skin == .blush ? theme.accent.opacity(0.08) : .clear, radius: 10, y: 2)
+    }
+
+    private var titleColor: Color {
+        switch theme.skin {
+        case .mech: Color(red: 0.84, green: 1, blue: 0.96)
+        case .blush, .apple: theme.ink
+        }
+    }
+
+    private var cardStroke: Color {
+        switch theme.skin {
+        case .mech: theme.accent.opacity(0.18)
+        case .blush: theme.line
+        case .apple: theme.line.opacity(0.7)
+        }
+    }
+
+    @ViewBuilder
+    private var cardBackground: some View {
+        switch theme.skin {
+        case .mech:
             LinearGradient(
-                colors: [accent.opacity(0.06), accent.opacity(0.015)],
+                colors: [brand.opacity(0.06), brand.opacity(0.015)],
                 startPoint: .top,
                 endPoint: .bottom
             )
-        )
-        .overlay(Rectangle().stroke(YuheTheme.cyan.opacity(0.12), lineWidth: 1))
+        case .blush:
+            LinearGradient(
+                colors: [Color.white.opacity(0.86), brand.opacity(0.08)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .apple:
+            theme.cardFill
+        }
+    }
+
+    private func tag(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(theme.mono(9))
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .overlay(theme.shape(.chip).stroke(color.opacity(0.55), lineWidth: theme.strokeWidth))
     }
 
     private var rightMeta: String {
@@ -307,39 +362,42 @@ struct ProviderCard: View {
 
     private func meter(title: String, percent: Double, trailing: String?, brand: Color, level: AlertLevel) -> some View {
         let clamped = min(max(percent, 0), 100)
-        let color = YuheTheme.barColor(level: level, brand: brand)
+        let color = theme.barColor(level: level, brand: brand)
         return VStack(spacing: 3) {
             HStack {
                 Text(title)
-                    .font(.custom("Share Tech Mono", size: 10))
-                    .foregroundStyle(YuheTheme.mute)
+                    .font(theme.mono(10))
+                    .foregroundStyle(theme.mute)
                 Spacer()
                 Text(YuheFormat.percent(percent))
-                    .font(.custom("Share Tech Mono", size: 11))
-                    .foregroundStyle(YuheTheme.ink)
+                    .font(theme.mono(11))
+                    .foregroundStyle(theme.ink)
             }
             ZStack(alignment: .leading) {
-                Rectangle().fill(Color.white.opacity(0.05))
+                Rectangle().fill(theme.skin == .blush ? Color.white.opacity(0.55) : Color.primary.opacity(theme.skin == .apple ? 0.08 : 0.05))
                 Rectangle()
                     .fill(
                         LinearGradient(
-                            colors: [color.opacity(0.55), color],
+                            colors: theme.glow ? [color.opacity(0.55), color] : [color.opacity(0.78), color],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
                     .scaleEffect(x: max(0.02, clamped / 100), y: 1, anchor: .leading)
-                    .shadow(color: color.opacity(0.7), radius: 5)
-                HatchOverlay()
+                    .shadow(color: theme.glow ? color.opacity(0.7) : .clear, radius: 5)
+                if theme.hatch {
+                    HatchOverlay()
+                }
             }
-            .frame(height: 6)
+            .frame(height: theme.meterHeight)
+            .clipShape(theme.shape(.chip))
             .clipped()
             if let trailing, !trailing.isEmpty {
                 HStack {
                     Spacer()
                     Text(trailing)
-                        .font(.custom("Share Tech Mono", size: 9))
-                        .foregroundStyle(YuheTheme.mute)
+                        .font(theme.mono(9))
+                        .foregroundStyle(theme.mute)
                 }
             }
         }
@@ -361,9 +419,15 @@ private struct HatchOverlay: View {
 }
 
 struct HUDShape: Shape {
+    var skin: AppSkin = .mech
+    func path(in rect: CGRect) -> Path { ThemeShape(skin: skin, kind: .panel).path(in: rect) }
+}
+
+struct CardShape: Shape {
+    var cut: CGFloat = 8
     func path(in rect: CGRect) -> Path {
         var p = Path()
-        let c: CGFloat = 14
+        let c = min(cut, min(rect.width, rect.height) / 4)
         p.move(to: CGPoint(x: c, y: 0))
         p.addLine(to: CGPoint(x: rect.maxX - c, y: 0))
         p.addLine(to: CGPoint(x: rect.maxX, y: c))

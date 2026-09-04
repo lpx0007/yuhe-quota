@@ -16,10 +16,6 @@ enum KeychainStore {
             try? writeFile(key)
             return key
         }
-        if let key = importFromKnownDotEnvs(), !key.isEmpty {
-            saveDeepSeekKey(key)
-            return key
-        }
         return nil
     }
 
@@ -29,13 +25,45 @@ enum KeychainStore {
     }
 
     static func deleteDeepSeekKey() {
-        try? FileManager.default.removeItem(at: fileURL)
+        deleteSecret(account: account, fileName: "deepseek.key")
+    }
+
+    static func loadGLMKey() -> String? {
+        loadSecret(account: "glm.api-key", fileName: "glm.key")
+    }
+
+    static func saveSecret(_ key: String, account: String, fileName: String) {
+        let url = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".config/yuhe/\(fileName)")
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? Data(key.utf8).write(to: url, options: .atomic)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        deleteKeychainAccount(account)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
+            kSecValueData as String: Data(key.utf8),
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
         ]
-        SecItemDelete(query as CFDictionary)
+        SecItemAdd(query as CFDictionary, nil)
+    }
+
+    static func loadSecret(account: String, fileName: String) -> String? {
+        let url = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".config/yuhe/\(fileName)")
+        if let raw = try? String(contentsOf: url, encoding: .utf8) {
+            let key = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !key.isEmpty { return key }
+        }
+        return readKeychainAccount(account)
+    }
+
+    static func deleteSecret(account: String, fileName: String) {
+        let url = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".config/yuhe/\(fileName)")
+        try? FileManager.default.removeItem(at: url)
+        deleteKeychainAccount(account)
     }
 
     private static func readFile() -> String? {
@@ -78,6 +106,24 @@ enum KeychainStore {
     }
 
     private static func deleteKeychainOnly() {
+        deleteKeychainAccount(account)
+    }
+
+    private static func readKeychainAccount(_ account: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        guard status == errSecSuccess, let data = item as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private static func deleteKeychainAccount(_ account: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -86,23 +132,4 @@ enum KeychainStore {
         SecItemDelete(query as CFDictionary)
     }
 
-    private static func importFromKnownDotEnvs() -> String? {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let files = [
-            home.appendingPathComponent(".reasonix/.env"),
-            home.appendingPathComponent("工作盘/动态网站本地版/pentagi/.env"),
-        ]
-        for url in files {
-            guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
-            for line in text.split(whereSeparator: \.isNewline) {
-                let raw = String(line).trimmingCharacters(in: .whitespaces)
-                guard raw.hasPrefix("DEEPSEEK_API_KEY=") else { continue }
-                var value = String(raw.dropFirst("DEEPSEEK_API_KEY=".count))
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                if value.hasPrefix("\"") && value.hasSuffix("\"") { value = String(value.dropFirst().dropLast()) }
-                if !value.isEmpty { return value }
-            }
-        }
-        return nil
-    }
 }

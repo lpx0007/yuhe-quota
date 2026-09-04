@@ -48,6 +48,12 @@ final class StatusBarController: NSObject {
             .sink { [weak self] _ in
                 DispatchQueue.main.async { self?.resizePanelIfNeeded() }
             }
+        settings.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { self?.resizePanelIfNeeded() }
+            }
+            .store(in: &bag)
     }
 
     @objc private func toggleHUD() {
@@ -93,7 +99,7 @@ final class StatusBarController: NSObject {
 
     private func makePanel() -> NSPanel {
         let panel = HUDPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 368, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 396, height: 640),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -121,11 +127,28 @@ final class StatusBarController: NSObject {
         guard let panel, panel.isVisible, let hosting else { return }
         hosting.invalidateIntrinsicContentSize()
         hosting.layoutSubtreeIfNeeded()
-        var size = hosting.fittingSize
-        size.width = 368
-        if !size.height.isFinite || size.height < 80 { size.height = 200 }
+        let size = NSSize(width: YuhePalette.panelWidth, height: YuhePalette.panelHeight)
         panel.setContentSize(size)
+        applyHUDMask(to: panel, size: size)
         positionPanel()
+    }
+
+    private func applyHUDMask(to panel: NSPanel, size: NSSize) {
+        let cgPath = HUDShape(skin: settings?.skin ?? .mech).path(in: CGRect(origin: .zero, size: size)).cgPath
+        func maskLayer() -> CAShapeLayer {
+            let mask = CAShapeLayer()
+            mask.path = cgPath
+            mask.fillColor = NSColor.black.cgColor
+            return mask
+        }
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.contentView?.wantsLayer = true
+        panel.contentView?.layer?.backgroundColor = NSColor.clear.cgColor
+        panel.contentView?.layer?.mask = maskLayer()
+        hosting?.wantsLayer = true
+        hosting?.layer?.backgroundColor = NSColor.clear.cgColor
+        hosting?.layer?.mask = maskLayer()
     }
 
     private func positionPanel() {

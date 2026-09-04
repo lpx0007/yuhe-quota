@@ -3,6 +3,9 @@ import Foundation
 enum ProviderID: String, CaseIterable, Identifiable, Codable {
     case cursor
     case codex
+    case claude
+    case kimi
+    case glm
     case deepseek
     case grok
 
@@ -12,6 +15,9 @@ enum ProviderID: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .cursor: "CURSOR"
         case .codex: "CODEX"
+        case .claude: "CLAUDE"
+        case .kimi: "KIMI"
+        case .glm: "GLM"
         case .deepseek: "DEEPSEEK"
         case .grok: "GROK"
         }

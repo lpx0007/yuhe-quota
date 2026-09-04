@@ -4,105 +4,143 @@ struct SettingsView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject var settings: AppSettings
     @ObservedObject private var updater = AppUpdate.shared
+    @Environment(\.yuhe) private var theme
 
     var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("YUHE · 设置")
-                    .font(.custom("Tektur", size: 15))
-                    .foregroundStyle(YuheTheme.cyan)
-                    .kerning(3)
-                    .shadow(color: YuheTheme.cyan.opacity(0.45), radius: 8)
+                Text(theme.skin == .blush ? "Yuhe · 设置" : "YUHE · 设置")
+                    .font(theme.display(15))
+                    .foregroundStyle(theme.accent)
+                    .kerning(theme.skin == .mech ? 3 : theme.titleKerning)
+                    .shadow(color: theme.glow ? theme.accent.opacity(0.45) : .clear, radius: 8)
                 Spacer()
                 Button("返回") { backToHUD() }
                     .buttonStyle(.plain)
-                    .font(.custom("Share Tech Mono", size: 11))
-                    .foregroundStyle(YuheTheme.cyan)
-                    .kerning(2)
+                    .font(theme.mono(11, weight: theme.skin == .apple ? .medium : .regular))
+                    .foregroundStyle(theme.accent)
+                    .kerning(theme.skin == .mech ? 2 : 0)
             }
 
-            section("显示") {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
-                    visibilityRow("Cursor", brand: YuheTheme.accent(for: .cursor), isOn: $settings.cursorEnabled)
-                    visibilityRow("Codex", brand: YuheTheme.accent(for: .codex), isOn: $settings.codexEnabled)
-                    visibilityRow("DeepSeek", brand: YuheTheme.accent(for: .deepseek), isOn: $settings.deepseekEnabled)
-                    visibilityRow("Grok", brand: YuheTheme.accent(for: .grok), isOn: $settings.grokEnabled)
+            section("皮肤") {
+                HStack(spacing: 6) {
+                    ForEach(AppSkin.allCases) { skin in
+                        skinChip(skin)
+                    }
                 }
             }
 
-            section("更新") {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("当前 \(AppUpdate.currentVersion)")
-                            .font(.custom("Share Tech Mono", size: 10))
-                            .foregroundStyle(YuheTheme.ink)
-                        Text(updater.status)
-                            .font(.custom("Share Tech Mono", size: 9))
-                            .foregroundStyle(updater.available ? YuheTheme.amber : YuheTheme.mute)
-                            .lineLimit(2)
+            HStack(alignment: .top, spacing: 8) {
+                section("显示 / 顺序", fill: true) {
+                    ForEach(Array(settings.providerOrder.enumerated()), id: \.element) { idx, id in
+                        orderRow(id, index: idx)
                     }
-                    Spacer()
-                    Button(updater.busy ? "…" : (updater.available ? "安装" : "检查")) {
-                        Task {
-                            if updater.available {
-                                await updater.install()
-                            } else {
-                                await updater.check()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    section("更新") {
+                        HStack(spacing: 8) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("v\(AppUpdate.currentVersion)")
+                                    .font(theme.mono(10))
+                                    .foregroundStyle(theme.ink)
+                                Text(updater.status)
+                                    .font(theme.mono(8))
+                                    .foregroundStyle(updater.available ? theme.amber : theme.mute)
+                                    .lineLimit(1)
                             }
+                            Spacer(minLength: 4)
+                            Button(updater.busy ? "…" : (updater.available ? "安装" : "检查")) {
+                                Task {
+                                    if updater.available {
+                                        await updater.install()
+                                    } else {
+                                        await updater.check()
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(updater.busy)
+                            .font(theme.mono(11, weight: .medium))
+                            .foregroundStyle(theme.buttonInk)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .yuheChrome(
+                                fill: updater.available ? theme.amber : theme.accent,
+                                stroke: updater.available ? theme.amber : theme.accent
+                            )
                         }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(updater.busy)
-                    .font(.custom("Share Tech Mono", size: 11))
-                    .foregroundStyle(YuheTheme.void)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(updater.available ? YuheTheme.amber : YuheTheme.cyan)
-                }
-            }
-
-            section("同步 / 预警") {
-                HStack(spacing: 6) {
-                    ForEach([1, 2, 5, 15], id: \.self) { minutes in
-                        intervalChip(minutes)
+                    section("预警", fill: true) {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 4) {
+                            ForEach([1, 2, 5, 15], id: \.self) { minutes in
+                                intervalChip(minutes)
+                            }
+                        }
+                        nodeRow("登录启动", brand: theme.accent, isOn: $settings.launchAtLogin)
+                        nodeRow("80% 提醒", brand: theme.amber, isOn: $settings.notify80)
+                        nodeRow("90% 提醒", brand: theme.rose, isOn: $settings.notify90)
                     }
                 }
-                nodeRow("登录时启动", brand: YuheTheme.cyan, isOn: $settings.launchAtLogin)
-                nodeRow("用量 ≥ 80% 弹出提醒", brand: YuheTheme.amber, isOn: $settings.notify80)
-                nodeRow("用量 ≥ 90% 弹出提醒", brand: YuheTheme.rose, isOn: $settings.notify90)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
+            .fixedSize(horizontal: false, vertical: true)
 
             section("Cursor 一键换号") {
                 CursorSwitchSection(store: store)
+            }
+
+            section("GLM Coding Plan Key") {
+                HStack(spacing: 8) {
+                    SecureField("国内 ZHIPU / GLM Key", text: $settings.glmKeyDraft)
+                        .textFieldStyle(.plain)
+                        .font(theme.mono(11))
+                        .foregroundStyle(theme.ink)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .yuheChrome(fill: theme.fieldFill, stroke: theme.line)
+                    Button("保存") {
+                        settings.saveGLMKey()
+                        backToHUD()
+                    }
+                    .buttonStyle(.plain)
+                    .font(theme.mono(11, weight: .medium))
+                    .foregroundStyle(theme.buttonInk)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .yuheChrome(fill: theme.accent, stroke: theme.accent)
+                }
             }
 
             section("DeepSeek") {
                 HStack(spacing: 8) {
                     SecureField("sk-…", text: $settings.deepseekKeyDraft)
                         .textFieldStyle(.plain)
-                        .font(.custom("Share Tech Mono", size: 11))
-                        .foregroundStyle(YuheTheme.ink)
+                        .font(theme.mono(11))
+                        .foregroundStyle(theme.ink)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.06))
-                        .overlay(Rectangle().stroke(YuheTheme.line, lineWidth: 1))
+                        .yuheChrome(fill: theme.fieldFill, stroke: theme.line)
                     Button("保存") {
                         settings.saveDeepSeekKey()
                         backToHUD()
                     }
                     .buttonStyle(.plain)
-                    .font(.custom("Share Tech Mono", size: 11))
-                    .foregroundStyle(YuheTheme.void)
+                    .font(theme.mono(11, weight: .medium))
+                    .foregroundStyle(theme.buttonInk)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(YuheTheme.cyan)
+                    .yuheChrome(fill: theme.accent, stroke: theme.accent)
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
-        .frame(width: 368, alignment: .top)
+        .padding(.horizontal, 4)
+        .padding(.top, 4)
+        .padding(.bottom, 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private func backToHUD() {
@@ -110,50 +148,86 @@ struct SettingsView: View {
         Task { await store.refresh() }
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: String, fill: Bool = false, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title.uppercased())
-                .font(.custom("Share Tech Mono", size: 10))
-                .foregroundStyle(YuheTheme.cyan.opacity(0.85))
-                .kerning(2)
+            Text(theme.sectionTitle(title))
+                .font(theme.mono(10, weight: theme.skin == .apple ? .medium : .regular))
+                .foregroundStyle(theme.accent.opacity(0.85))
+                .kerning(theme.skin == .mech ? 2 : 0)
             VStack(alignment: .leading, spacing: 6) {
                 content()
             }
             .padding(8)
-            .overlay(Rectangle().stroke(YuheTheme.line, lineWidth: 1))
-            .background(YuheTheme.cyan.opacity(0.04))
+            .frame(maxWidth: .infinity, maxHeight: fill ? .infinity : nil, alignment: .top)
+            .background(theme.cardFill)
+            .clipShape(theme.shape(.card))
+            .overlay(theme.shape(.card).stroke(theme.line, lineWidth: theme.strokeWidth))
+        }
+        .frame(maxHeight: fill ? .infinity : nil, alignment: .top)
+    }
+
+    private func skinChip(_ skin: AppSkin) -> some View {
+        let selected = settings.skin == skin
+        return Button {
+            settings.skin = skin
+        } label: {
+            Text(skin.title)
+                .font(theme.mono(10, weight: selected ? .medium : .regular))
+                .foregroundStyle(selected ? theme.buttonInk : theme.ink)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+                .yuheChrome(
+                    fill: selected ? theme.accent : theme.fieldFill,
+                    stroke: selected ? theme.accent : theme.line
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func binding(for id: ProviderID) -> Binding<Bool> {
+        switch id {
+        case .cursor: $settings.cursorEnabled
+        case .codex: $settings.codexEnabled
+        case .claude: $settings.claudeEnabled
+        case .kimi: $settings.kimiEnabled
+        case .glm: $settings.glmEnabled
+        case .deepseek: $settings.deepseekEnabled
+        case .grok: $settings.grokEnabled
         }
     }
 
-    private func visibilityRow(_ title: String, brand: Color, isOn: Binding<Bool>) -> some View {
-        Button {
-            if isOn.wrappedValue, settings.enabledProviders.count <= 1 { return }
-            isOn.wrappedValue.toggle()
-        } label: {
-            HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 2)
-                        .stroke(brand.opacity(0.7), lineWidth: 1)
-                        .frame(width: 14, height: 14)
-                    if isOn.wrappedValue {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(brand)
-                            .frame(width: 8, height: 8)
-                    }
+    private func orderRow(_ id: ProviderID, index: Int) -> some View {
+        let on = binding(for: id)
+        let brand = theme.accent(for: id)
+        return HStack(spacing: 8) {
+            Button {
+                if on.wrappedValue, settings.enabledProviders.count <= 1 { return }
+                on.wrappedValue.toggle()
+            } label: {
+                HStack(spacing: 8) {
+                    tick(on: on.wrappedValue, brand: brand)
+                    Text(id.displayName.capitalized)
+                        .font(theme.mono(11))
+                        .foregroundStyle(theme.ink)
+                    Spacer(minLength: 0)
                 }
-                Text(title)
-                    .font(.custom("Share Tech Mono", size: 12))
-                    .foregroundStyle(YuheTheme.ink)
-                Spacer()
-                Text(isOn.wrappedValue ? "显示" : "隐藏")
-                    .font(.custom("Share Tech Mono", size: 10))
-                    .foregroundStyle(isOn.wrappedValue ? brand : YuheTheme.mute)
-                    .kerning(1)
             }
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .opacity(on.wrappedValue && settings.enabledProviders.count <= 1 ? 0.55 : 1)
+
+            VStack(spacing: 0) {
+                Button { settings.moveProvider(id: id, up: true) } label: {
+                    Text("▲").font(.system(size: 8)).foregroundStyle(index == 0 ? theme.mute : theme.accent)
+                }
+                .buttonStyle(.plain)
+                .disabled(index == 0)
+                Button { settings.moveProvider(id: id, up: false) } label: {
+                    Text("▼").font(.system(size: 8)).foregroundStyle(index == settings.providerOrder.count - 1 ? theme.mute : theme.accent)
+                }
+                .buttonStyle(.plain)
+                .disabled(index == settings.providerOrder.count - 1)
+            }
         }
-        .buttonStyle(.plain)
-        .opacity(isOn.wrappedValue && settings.enabledProviders.count <= 1 ? 0.55 : 1)
     }
 
     private func nodeRow(_ title: String, brand: Color, isOn: Binding<Bool>) -> some View {
@@ -161,28 +235,32 @@ struct SettingsView: View {
             isOn.wrappedValue.toggle()
         } label: {
             HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 2)
-                        .stroke(brand.opacity(0.7), lineWidth: 1)
-                        .frame(width: 14, height: 14)
-                    if isOn.wrappedValue {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(brand)
-                            .frame(width: 8, height: 8)
-                    }
-                }
+                tick(on: isOn.wrappedValue, brand: brand)
                 Text(title)
-                    .font(.custom("Share Tech Mono", size: 12))
-                    .foregroundStyle(YuheTheme.ink)
+                    .font(theme.mono(12))
+                    .foregroundStyle(theme.ink)
                 Spacer()
                 Text(isOn.wrappedValue ? "ON" : "OFF")
-                    .font(.custom("Share Tech Mono", size: 10))
-                    .foregroundStyle(isOn.wrappedValue ? brand : YuheTheme.mute)
-                    .kerning(1)
+                    .font(theme.mono(10))
+                    .foregroundStyle(isOn.wrappedValue ? brand : theme.mute)
+                    .kerning(theme.skin == .mech ? 1 : 0)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func tick(on: Bool, brand: Color) -> some View {
+        ZStack {
+            theme.shape(.tick)
+                .stroke(brand.opacity(0.7), lineWidth: 1)
+                .frame(width: 14, height: 14)
+            if on {
+                theme.shape(.tick)
+                    .fill(brand)
+                    .frame(width: 8, height: 8)
+            }
+        }
     }
 
     private func intervalChip(_ minutes: Int) -> some View {
@@ -191,13 +269,15 @@ struct SettingsView: View {
             settings.refreshMinutes = minutes
             store.rebuildTimer()
         } label: {
-            Text("\(minutes) 分钟")
-                .font(.custom("Share Tech Mono", size: 11))
-                .foregroundStyle(selected ? YuheTheme.void : YuheTheme.ink)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(selected ? YuheTheme.cyan : Color.white.opacity(0.06))
-                .overlay(Rectangle().stroke(selected ? YuheTheme.cyan : YuheTheme.line, lineWidth: 1))
+            Text("\(minutes)分")
+                .font(theme.mono(10, weight: selected ? .medium : .regular))
+                .foregroundStyle(selected ? theme.buttonInk : theme.ink)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 5)
+                .yuheChrome(
+                    fill: selected ? theme.accent : theme.fieldFill,
+                    stroke: selected ? theme.accent : theme.line
+                )
         }
         .buttonStyle(.plain)
     }
@@ -205,6 +285,7 @@ struct SettingsView: View {
 
 struct CursorSwitchSection: View {
     @ObservedObject var store: UsageStore
+    @Environment(\.yuhe) private var theme
     @State private var tokenDraft = ""
     @State private var file = CursorSessionStore.load()
     @State private var queryID = CursorSessionStore.currentQueryAccountID()
@@ -215,45 +296,44 @@ struct CursorSwitchSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(status)
-                .font(.custom("Share Tech Mono", size: 9))
-                .foregroundStyle(ok ? YuheTheme.cyan : YuheTheme.mute)
+                .font(theme.mono(9))
+                .foregroundStyle(ok ? theme.accent : theme.mute)
                 .lineLimit(2)
 
             ZStack(alignment: .topLeading) {
                 if tokenDraft.isEmpty {
                     Text("完整 Token：user_xxx%3A%3AeyJ...")
-                        .font(.custom("Share Tech Mono", size: 10))
-                        .foregroundStyle(YuheTheme.mute)
+                        .font(theme.mono(10))
+                        .foregroundStyle(theme.mute)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 10)
                         .allowsHitTesting(false)
                 }
                 TextEditor(text: $tokenDraft)
-                    .font(.custom("Share Tech Mono", size: 10))
-                    .foregroundStyle(YuheTheme.ink)
+                    .font(theme.mono(10))
+                    .foregroundStyle(theme.ink)
                     .scrollContentBackground(.hidden)
-                    .frame(minHeight: 72, maxHeight: 72)
+                    .frame(minHeight: 36, maxHeight: 36)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
             }
-            .background(Color.white.opacity(0.06))
-            .overlay(Rectangle().stroke(YuheTheme.line, lineWidth: 1))
+            .yuheChrome(fill: theme.fieldFill, stroke: theme.line)
 
             HStack {
                 Text(CursorIDEAuth.isRunning ? "会先退出再打开 Cursor" : "写入后打开 Cursor")
-                    .font(.custom("Share Tech Mono", size: 9))
-                    .foregroundStyle(YuheTheme.mute)
+                    .font(theme.mono(9))
+                    .foregroundStyle(theme.mute)
                 Spacer()
                 Button(busy ? "换号中" : "一键换号") {
                     Task { await switchIDE() }
                 }
                 .buttonStyle(.plain)
                 .disabled(busy || tokenDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .font(.custom("Share Tech Mono", size: 11))
-                .foregroundStyle(YuheTheme.void)
+                .font(theme.mono(11, weight: .medium))
+                .foregroundStyle(theme.buttonInk)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(YuheTheme.cyan)
+                .yuheChrome(fill: theme.accent, stroke: theme.accent)
             }
 
             Button("改回 Cursor 当前登录") {
@@ -264,8 +344,8 @@ struct CursorSwitchSection: View {
                 Task { await store.refresh() }
             }
             .buttonStyle(.plain)
-            .font(.custom("Share Tech Mono", size: 10))
-            .foregroundStyle(YuheTheme.cyan)
+            .font(theme.mono(10))
+            .foregroundStyle(theme.accent)
 
             Group {
                 if file.accounts.count > 4 {
@@ -286,13 +366,13 @@ struct CursorSwitchSection: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(account.email ?? account.id)
-                            .font(.custom("Share Tech Mono", size: 10))
-                            .foregroundStyle(YuheTheme.ink)
+                            .font(theme.mono(10))
+                            .foregroundStyle(theme.ink)
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Text(account.canRestoreIDE ? "可写入 App" : "仅查询")
-                            .font(.custom("Share Tech Mono", size: 8))
-                            .foregroundStyle(account.canRestoreIDE ? YuheTheme.cyan : YuheTheme.mute)
+                            .font(theme.mono(8))
+                            .foregroundStyle(account.canRestoreIDE ? theme.accent : theme.mute)
                     }
                     Spacer()
                     if account.canRestoreIDE {
@@ -301,8 +381,8 @@ struct CursorSwitchSection: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(busy)
-                        .font(.custom("Share Tech Mono", size: 9))
-                        .foregroundStyle(YuheTheme.amber)
+                        .font(theme.mono(9))
+                        .foregroundStyle(theme.amber)
                     }
                     Button("删") {
                         CursorSessionStore.remove(id: account.id)
@@ -310,8 +390,8 @@ struct CursorSwitchSection: View {
                         queryID = CursorSessionStore.currentQueryAccountID()
                     }
                     .buttonStyle(.plain)
-                    .font(.custom("Share Tech Mono", size: 9))
-                    .foregroundStyle(YuheTheme.rose)
+                    .font(theme.mono(9))
+                    .foregroundStyle(theme.rose)
                 }
             }
         }

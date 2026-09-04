@@ -3,8 +3,6 @@ import SwiftUI
 
 enum ReactorIcon {
     static func image(level: AlertLevel, size: CGFloat = 18, pulse: Bool = false) -> NSImage {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2
-        let px = size * scale
         let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
             guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
             ctx.setShouldAntialias(true)
@@ -39,7 +37,6 @@ enum ReactorIcon {
             return true
         }
         image.isTemplate = false
-        _ = px
         return image
     }
 

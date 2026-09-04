@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${VERSION:-1.9.0}"
+VERSION="${VERSION:-2.0.0}"
 REPO="${GITHUB_REPO:-lpx0007/yuhe-quota}"
 NOTES="${RELEASE_NOTES:-余核 ${VERSION}}"
 

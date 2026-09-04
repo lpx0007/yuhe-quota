@@ -13,6 +13,7 @@ final class UsageStore: ObservableObject {
     private var timer: Timer?
     private var clock: Timer?
     private var notified: Set<String> = []
+    private let notifiedKey = "yuhe.notify.fired"
 
     var ordered: [QuotaSnapshot] {
         AppSettings.shared.enabledProviders.map { snapshot(for: $0) }
@@ -40,6 +41,7 @@ final class UsageStore: ObservableObject {
             Task { @MainActor in self?.now = Date() }
         }
         if let clock { RunLoop.main.add(clock, forMode: .common) }
+        notified = Set(UserDefaults.standard.stringArray(forKey: notifiedKey) ?? [])
         rebuildTimer()
     }
 
@@ -61,6 +63,9 @@ final class UsageStore: ObservableObject {
             switch id {
             case .cursor: CursorProvider()
             case .codex: CodexProvider()
+            case .claude: ClaudeProvider()
+            case .kimi: KimiProvider()
+            case .glm: GLMProvider()
             case .deepseek: DeepSeekProvider()
             case .grok: GrokProvider()
             }
@@ -116,6 +121,7 @@ final class UsageStore: ObservableObject {
         } else if percent < 90 {
             notified.remove(key90)
         }
+        UserDefaults.standard.set(Array(notified), forKey: notifiedKey)
     }
 
     private func notify(_ title: String, body: String) {

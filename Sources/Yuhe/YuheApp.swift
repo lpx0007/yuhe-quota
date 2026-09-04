@@ -67,7 +67,8 @@ enum StatusCommand {
         Task {
             defer { group.leave() }
             let providers: [any QuotaProvider] = [
-                CursorProvider(), CodexProvider(), DeepSeekProvider(), GrokProvider(),
+                CursorProvider(), CodexProvider(), ClaudeProvider(), KimiProvider(),
+                GLMProvider(), DeepSeekProvider(), GrokProvider(),
             ]
             await withTaskGroup(of: QuotaSnapshot.self) { g in
                 for p in providers { g.addTask { await p.fetch() } }
