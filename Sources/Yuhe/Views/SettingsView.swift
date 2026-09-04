@@ -61,15 +61,15 @@ struct SettingsView: View {
                 }
             }
 
-            section("同步 / 告警") {
+            section("同步 / 预警") {
                 HStack(spacing: 6) {
                     ForEach([1, 2, 5, 15], id: \.self) { minutes in
                         intervalChip(minutes)
                     }
                 }
                 nodeRow("登录时启动", brand: YuheTheme.cyan, isOn: $settings.launchAtLogin)
-                nodeRow("用量 ≥ 80% 通知", brand: YuheTheme.amber, isOn: $settings.notify80)
-                nodeRow("用量 ≥ 90% 通知", brand: YuheTheme.rose, isOn: $settings.notify90)
+                nodeRow("用量 ≥ 80% 弹出提醒", brand: YuheTheme.amber, isOn: $settings.notify80)
+                nodeRow("用量 ≥ 90% 弹出提醒", brand: YuheTheme.rose, isOn: $settings.notify90)
             }
 
             section("Cursor 一键换号") {

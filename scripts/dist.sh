@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="余核"
-VERSION="${VERSION:-1.8.0}"
+VERSION="${VERSION:-1.9.0}"
 DIST="$ROOT/dist"
 ZIP_NAME="Yuhe-${VERSION}-macos-arm64.zip"
 

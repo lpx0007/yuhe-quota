@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+@preconcurrency import UserNotifications
 
 @main
 enum YuheMain {
@@ -27,9 +28,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         FontLoader.register()
         installEditMenu()
+        UNUserNotificationCenter.current().delegate = NotificationPresenter.shared
         NSApp.setActivationPolicy(.accessory)
         StatusBarController.shared.start(store: store, settings: settings)
-        Task { await store.refresh() }
+        Task {
+            _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+            await store.refresh()
+        }
     }
 
     /// 无 Dock 的 accessory App 默认没有 Edit 菜单，Cmd+V 不会进输入框。

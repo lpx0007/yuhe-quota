@@ -105,10 +105,10 @@ final class UsageStore: ObservableObject {
         let key80 = "\(snap.id.rawValue)-\(title)-80"
         if settings.notify90, percent >= 90, !notified.contains(key90) {
             notified.insert(key90)
-            notify("\(snap.provider.displayName) \(title) 已用 \(YuheFormat.percent(percent))", body: "额度告急")
+            notify("\(snap.provider.displayName) \(title) 已用 \(YuheFormat.percent(percent))", body: "额度即将用尽")
         } else if settings.notify80, percent >= 80, percent < 90, !notified.contains(key80) {
             notified.insert(key80)
-            notify("\(snap.provider.displayName) \(title) 已用 \(YuheFormat.percent(percent))", body: "接近上限")
+            notify("\(snap.provider.displayName) \(title) 已用 \(YuheFormat.percent(percent))", body: "额度预警")
         }
         if percent < 80 {
             notified.remove(key80)
@@ -119,15 +119,6 @@ final class UsageStore: ObservableObject {
     }
 
     private func notify(_ title: String, body: String) {
-        let center = UNUserNotificationCenter.current()
-        Task {
-            let granted = try? await center.requestAuthorization(options: [.alert, .sound])
-            guard granted == true else { return }
-            let content = UNMutableNotificationContent()
-            content.title = title
-            content.body = body
-            let req = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-            try? await center.add(req)
-        }
+        Task { await NotificationPresenter.post(title: title, body: body) }
     }
 }

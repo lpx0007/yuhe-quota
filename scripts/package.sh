@@ -6,8 +6,8 @@ APP_NAME="余核"
 EXEC_NAME="Yuhe"
 BUILD_DIR="$ROOT/.build/release"
 APP_BUNDLE="$ROOT/$APP_NAME.app"
-VERSION="${VERSION:-1.8.0}"
-BUILD_NUMBER="${BUILD_NUMBER:-12}"
+VERSION="${VERSION:-1.9.0}"
+BUILD_NUMBER="${BUILD_NUMBER:-13}"
 
 cd "$ROOT"
 echo "Building $APP_NAME..."
@@ -57,6 +57,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<EOF
     <true/>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSUserNotificationAlertStyle</key>
+    <string>alert</string>
 </dict>
 </plist>
 EOF
