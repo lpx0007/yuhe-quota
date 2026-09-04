@@ -39,7 +39,7 @@ final class AppUpdate: ObservableObject {
             for asset in assets {
                 guard let dict = JSONValue.dict(asset) else { continue }
                 let name = JSONValue.string(dict["name"]) ?? ""
-                if name.hasSuffix(".zip"), name.contains("macos") || name.contains("余核") {
+                if name.hasSuffix(".zip"), name.lowercased().contains("macos") || name.hasPrefix("Yuhe-") || name.contains("余核") {
                     if let raw = JSONValue.string(dict["browser_download_url"]) {
                         zipURL = URL(string: raw)
                         break

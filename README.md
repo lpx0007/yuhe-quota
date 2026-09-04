@@ -10,7 +10,7 @@ macOS 顶部状态栏小工具。一个六边形图标，点开后查看 Cursor 
 VERSION=1.8.0 bash scripts/release.sh
 ```
 
-产物：`dist/余核-1.8.0-macos-arm64.zip`  
+产物：`dist/Yuhe-1.8.0-macos-arm64.zip`  
 更新源：GitHub Releases（免费、公开仓库）。
 
 对方：解压 → 拖进「应用程序」→ **Control + 点图标 → 打开**（没有苹果开发者签名，双击会被拦）。

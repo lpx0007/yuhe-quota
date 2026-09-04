@@ -9,7 +9,7 @@ NOTES="${RELEASE_NOTES:-余核 ${VERSION}}"
 export VERSION
 bash "$ROOT/scripts/dist.sh"
 
-ZIP="$ROOT/dist/余核-${VERSION}-macos-arm64.zip"
+ZIP="$ROOT/dist/Yuhe-${VERSION}-macos-arm64.zip"
 if [[ ! -f "$ZIP" ]]; then
     echo "missing $ZIP" >&2
     exit 1
