@@ -3,3 +3,11 @@
 *.app
 dist/
 .DS_Store
+
+# 本仓只公开发版说明与截图，源码留在本机
+Sources/
+Package.swift
+scripts/
+preview/
+未命名/
+推广/

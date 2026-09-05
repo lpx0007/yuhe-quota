@@ -68,9 +68,11 @@ xattr -cr /Applications/余核.app
 open /Applications/余核.app
 ```
 
-之后在设置里点「检查 / 安装」自动更新，不必每次再发安装包。
+之后在设置里点「检查 / 安装」自动更新，不必每次再发安装包。旧版本同样从本仓库 Releases 升级，仓库地址和 zip 文件名不变。
 
 仅 **Apple 芯片**（M1 及更新）+ **macOS 14 Sonoma** 及以上。暂不支持 Intel。
+
+本仓库是发版说明仓，不公开应用程序源码。
 
 ## Cursor Bot / Stream
 
@@ -82,25 +84,6 @@ open /Applications/余核.app
 4. **一键卸载** 按安装备份还原文件，并写回官方签名
 
 不要和「一键换号」同时点。账号需要已有官方 Sand / Grok Bot 资格，余核不会绕过服务端校验。
-
-## 自己编译
-
-```bash
-bash scripts/package.sh
-open "余核.app"
-```
-
-拉数调试：
-
-```bash
-swift run Yuhe --status
-```
-
-发版：
-
-```bash
-VERSION=2.1.0 bash scripts/release.sh
-```
 
 ## 许可
 
