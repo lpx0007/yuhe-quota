@@ -4,10 +4,20 @@
 dist/
 .DS_Store
 
-# 本仓只公开发版说明与截图，源码留在本机
-Sources/
+# 本仓只公开发版说明与截图，源码留在本机。
+# 被整体忽略的目录 git 不会再进入，所以要逐层放行到图标文件，且目录规则不能带尾部斜杠。
+Sources/*
+!Sources/Yuhe/
+Sources/Yuhe/*
+!Sources/Yuhe/Resources/
+Sources/Yuhe/Resources/*
+!Sources/Yuhe/Resources/AppIcon.icns
 Package.swift
+VERSION
 scripts/
 preview/
 未命名/
 推广/
+
+# Cursor 补丁工具包，不进公开仓
+sand-stream-toolkit*
