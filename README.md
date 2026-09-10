@@ -35,7 +35,7 @@ macOS 菜单栏小工具。点一下六边形图标，就能看到 Cursor / Code
 - **多账号源**：Cursor、Codex、Claude、Kimi、GLM、DeepSeek、Grok，显示和顺序自己排
 - **预警**：80% / 90% 系统通知，刷新间隔 1 / 2 / 5 / 15 分钟
 - **自动更新**：设置里检查，从 GitHub Releases 覆盖安装
-- **Cursor 一键换号**：粘贴网页 Token；列表里已能写入的号直接切会话，新号再兑换成 App 登录
+- **Cursor 一键换号**：粘贴网页 Token，不必先在 Cursor 里登录；已收录的号直接切会话，新号兑换后写入
 - **Cursor Bot / Stream**：给 3.19.13 打 Grok Bot Box 中继补丁；恢复原版按备份还原并写回官方签名
 - **登录启动**：可选
 
