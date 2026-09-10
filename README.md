@@ -35,8 +35,8 @@ macOS 菜单栏小工具。点一下六边形图标，就能看到 Cursor / Code
 - **多账号源**：Cursor、Codex、Claude、Kimi、GLM、DeepSeek、Grok，显示和顺序自己排
 - **预警**：80% / 90% 系统通知，刷新间隔 1 / 2 / 5 / 15 分钟
 - **自动更新**：设置里检查，从 GitHub Releases 覆盖安装
-- **Cursor 一键换号**：网页 Token 换成 Cursor App 会话后写入并重启
-- **Cursor Bot / Stream**：给 3.18.9 打动态路由补丁，Sand / IDE 约 1 秒切换；恢复原版按备份还原并写回官方签名
+- **Cursor 一键换号**：粘贴网页 Token；列表里已能写入的号直接切会话，新号再兑换成 App 登录
+- **Cursor Bot / Stream**：给 3.19.13 打 Grok Bot Box 中继补丁；恢复原版按备份还原并写回官方签名
 - **登录启动**：可选
 
 ## 额度从哪来
@@ -76,15 +76,16 @@ open /Applications/余核.app
 
 ## Cursor Bot / Stream
 
-给 Cursor **3.18.9** 打官方 Sand / Grok Bot 补丁。版本不对时按钮是灰的。建议关掉 Cursor 自动更新。
+给 Cursor **3.19.13** 打 Grok Bot Box 中继补丁。版本不对时按钮是灰的。建议关掉 Cursor 自动更新。
 
 1. 系统设置 → 隐私与安全性 → **App 管理**，打开「余核」。没有余核时，先在设置里点「申请权限」
-2. 保存 Cursor 未保存的文件（启用过程会退出 Cursor）
-3. 余核设置 → Cursor Bot / Stream → **启用动态路由**（已是旧版静态补丁时显示「升级到动态路由」）
-4. 启用后用 **Sand | IDE** 切换通道，约 1 秒生效，不用重启 Cursor
-5. **恢复原版** 按安装备份还原文件，并写回官方签名
+2. Cursor 登录带 Bot 额度的账号，或用余核「一键换号」写入
+3. 保存未保存的文件（启用过程会退出并重开 Cursor）
+4. 余核设置 → Cursor Bot / Stream → **一键启用 Bot 额度**
+5. 换号或 Connection Error 时点「刷新 Box 中继」
+6. **恢复原版** 按安装备份还原文件，并写回官方签名
 
-不要和「一键换号」同时点。账号需要已有官方 Sand / Grok Bot 资格，余核不会绕过服务端校验。
+不要和「一键换号」同时点。账号需要已有官方 Grok Bot 资格，余核不会绕过服务端校验。旧版 3.18.9 Sand / 动态路由通道已失效：先恢复原版，再把 Cursor 升到 3.19.13。
 
 ## 许可
 
