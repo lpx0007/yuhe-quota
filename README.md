@@ -35,7 +35,7 @@ macOS 菜单栏小工具。点一下六边形图标，就能看到 Cursor / Code
 - **多账号源**：Cursor、Codex、Claude、Kimi、GLM、DeepSeek、Grok，显示和顺序自己排
 - **预警**：80% / 90% 系统通知，刷新间隔 1 / 2 / 5 / 15 分钟
 - **自动更新**：设置里检查，从 GitHub Releases 覆盖安装
-- **Cursor 一键换号**：粘贴网页 Token，不必先在 Cursor 里登录；已收录的号直接切会话，新号兑换后写入
+- **Cursor 一键换号**：粘贴网页 Token，不必先在 Cursor 里登录；已收录的号点「写入」即可。Cursor 开着时热切换，一般不用重启；失败再写库重开
 - **Cursor Bot / Stream**：给 3.19.13 打 Grok Bot Box 中继补丁；恢复原版按备份还原并写回官方签名
 - **登录启动**：可选
 
@@ -79,8 +79,8 @@ open /Applications/余核.app
 给 Cursor **3.19.13** 打 Grok Bot Box 中继补丁。版本不对时按钮是灰的。建议关掉 Cursor 自动更新。
 
 1. 系统设置 → 隐私与安全性 → **App 管理**，打开「余核」。没有余核时，先在设置里点「申请权限」
-2. Cursor 登录带 Bot 额度的账号，或用余核「一键换号」写入
-3. 保存未保存的文件（启用过程会退出并重开 Cursor）
+2. Cursor 登录带 Bot 额度的账号，或用余核「一键换号」写入（开着时热切换，失败才重启）
+3. 保存未保存的文件（启用 / 恢复 Bot 补丁仍会退出并重开 Cursor）
 4. 余核设置 → Cursor Bot / Stream → **一键启用 Bot 额度**
 5. 换号或 Connection Error 时点「刷新 Box 中继」
 6. **恢复原版** 按安装备份还原文件，并写回官方签名
